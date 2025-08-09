@@ -25,27 +25,25 @@ import { useNavigate } from "react-router-dom";
 dayjs.extend(isToday);
 
 export default function Home() {
-  const navigate = useNavigate(); // ✅ moved inside component
+  const navigate = useNavigate();
   const { events, removeEvent } = useContext(EventContext);
   const [filterType, setFilterType] = useState("");
   const [search, setSearch] = useState("");
   const isMobile = useMediaQuery("(max-width:600px)");
 
-  // Sort events chronologically
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [events]);
-
-  // Filter + search logic
+  // Safe filter + sort logic
   const filteredEvents = useMemo(() => {
-    return sortedEvents.filter((event) => {
-      const matchesType = filterType ? event.type === filterType : true;
-      const matchesSearch =
-        event.title.toLowerCase().includes(search.toLowerCase()) ||
-        event.location.toLowerCase().includes(search.toLowerCase());
-      return matchesType && matchesSearch;
-    });
-  }, [filterType, search, sortedEvents]);
+    const lowerSearch = search.toLowerCase();
+    return [...events]
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .filter((event) => {
+        const matchesType = filterType ? event.type === filterType : true;
+        const matchesSearch =
+          (event.title?.toLowerCase() || "").includes(lowerSearch) ||
+          (event.location?.toLowerCase() || "").includes(lowerSearch);
+        return matchesType && matchesSearch;
+      });
+  }, [filterType, search, events]);
 
   return (
     <Box sx={{ p: isMobile ? 2 : 4, backgroundColor: "#f5f5dc", minHeight: "100vh" }}>
@@ -114,26 +112,47 @@ export default function Home() {
                 }}
               >
                 <CardContent>
+                  {/* Title + Action */}
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography variant="h6" fontWeight="bold" sx={{ color: "#5c4033" }}>
-                      {event.title}
+                      {event.title || "Untitled Event"}
                     </Typography>
-                    <IconButton color="success" onClick={() => removeEvent(event.id)}>
+                    <IconButton
+                      color="success"
+                      onClick={() => {
+                        if (window.confirm("Mark this event as completed?")) {
+                          removeEvent(event.id);
+                        }
+                      }}
+                      disabled={isPast}
+                    >
                       <CheckCircleIcon />
                     </IconButton>
                   </Box>
 
-                  {isEventToday && <Chip label="Today" color="primary" size="small" />}
+                  {/* Today chip */}
+                  {isEventToday && (
+                    <Chip
+                      label="Today"
+                      color="primary"
+                      size="small"
+                      sx={{ fontWeight: "bold", mt: 0.5 }}
+                    />
+                  )}
 
                   <Typography variant="body2" color="text.secondary">
-                    {dayjs(event.date).format("MMM D, YYYY • h:mm A")}
+                    {event.date ? dayjs(event.date).format("MMM D, YYYY • h:mm A") : "No date set"}
                   </Typography>
 
+                  {/* Location */}
                   <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
                     <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} />
-                    <Typography variant="body2">{event.location}</Typography>
+                    <Typography variant="body2">
+                      {event.location || "Location not specified"}
+                    </Typography>
                   </Box>
 
+                  {/* Attendees */}
                   <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
                     <PeopleIcon fontSize="small" sx={{ mr: 0.5 }} />
                     <Typography variant="body2">
@@ -141,6 +160,7 @@ export default function Home() {
                     </Typography>
                   </Box>
 
+                  {/* View details */}
                   <Button
                     variant="contained"
                     size="small"
@@ -149,7 +169,7 @@ export default function Home() {
                       backgroundColor: "#8B5E3C",
                       "&:hover": { backgroundColor: "#70422a" }
                     }}
-                    onClick={() => navigate(`/event/${event.id}`)} // ✅ navigate works
+                    onClick={() => navigate(`/event/${event.id}`)}
                   >
                     View Details
                   </Button>
