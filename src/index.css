@@ -1,4 +1,4 @@
-
+@import "antd/dist/reset.css";
 @import "leaflet/dist/leaflet.css";
 *{
   padding: 0;

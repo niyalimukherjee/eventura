@@ -47,6 +47,14 @@ export function upsertEvent(event) {
   }
 
   write("events", events);
+
+  // 🔄 Real-time event update signal
+  try {
+    window.dispatchEvent(new CustomEvent("event-updated", { detail: { eventId: id } }));
+  } catch (err) {
+    console.warn("Real-time event update failed:", err);
+  }
+
   return events.find(e => e.id === id);
 }
 
@@ -78,6 +86,14 @@ export function addInvitees(eventId, invitees) {
 
   invites.push(...newInvites);
   write("invites", invites);
+
+  // 🔄 Real-time invite update signal
+  try {
+    window.dispatchEvent(new CustomEvent("invite-updated", { detail: { eventId } }));
+  } catch (err) {
+    console.warn("Real-time invite update failed:", err);
+  }
+
   return newInvites;
 }
 
@@ -97,6 +113,13 @@ export function setInviteStatus(eventId, userId, status, notes = "") {
   }
 
   write("invites", invites);
+
+  // 🔄 Real-time invite update signal
+  try {
+    window.dispatchEvent(new CustomEvent("invite-updated", { detail: { eventId } }));
+  } catch (err) {
+    console.warn("Real-time invite update failed:", err);
+  }
 }
 
 /* -------------------- CLEANUP / SEED -------------------- */

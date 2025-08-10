@@ -1,31 +1,44 @@
 // src/lib/reminderRunner.js
-// Requires mockdb functions
-import { listEvents, listInvites } from "./mockdb";
+import { listEvents, listInvites } from './mockdb';
 
-/**
- * Stores sent reminders in localStorage under "sentReminders" as:
- * { "<eventId>|<offsetDays>|<inviteeId>": timestamp }
- */
 const STORAGE_KEY = "sentReminders_v1";
 
 function loadSent() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
 }
-function saveSent(obj) { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
+function saveSent(obj) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+}
 
-/** Simulate sending reminder: replace with API call. */
 function sendReminderToInvitee(eventDoc, invitee) {
-  // For production, call server to send email/push
-  console.log(`[Reminder] event=${eventDoc.id} to=${invitee.email} (${invitee.id})`);
-  // show toast/alert (comment out if noisy)
-  // window.alert(`Reminder sent to ${invitee.email} for event ${eventDoc.title}`);
+  console.log(
+    `[Reminder] event=${eventDoc.id} to=${invitee.email} (${invitee.userId})`
+  );
+
+  // 🔔 Trigger a custom browser event for UI notification
+  try {
+    window.dispatchEvent(
+      new CustomEvent("reminder-sent", {
+        detail: {
+          eventName: eventDoc.name || eventDoc.title,
+          email: invitee.email,
+          daysBefore: eventDoc.reminders?.find((r) =>
+            r.offsetDays !== undefined
+          )?.offsetDays
+        }
+      })
+    );
+  } catch (err) {
+    console.warn("Failed to dispatch reminder event:", err);
+  }
 }
 
-/** main runner */
 export function startReminderRunner({ intervalMs = 60000 } = {}) {
-  // initial run
   runOnce();
-  // set interval
   const id = setInterval(runOnce, intervalMs);
   return () => clearInterval(id);
 
@@ -36,21 +49,22 @@ export function startReminderRunner({ intervalMs = 60000 } = {}) {
       const now = Date.now();
 
       events.forEach((ev) => {
-        if (!ev.reminders || !ev.startAt) return;
-        // compute ms for event start
-        const startMs = new Date(ev.startAt).getTime();
+        if (!ev.reminders || !ev.date) return;
+
+        const startMs = new Date(ev.date).getTime();
+
         ev.reminders.forEach((r) => {
           const offsetMs = (r.offsetDays || 0) * 24 * 3600 * 1000;
           const sendAt = startMs - offsetMs;
-          // only consider reminders whose sendAt <= now and not in future
+
           if (sendAt <= now) {
-            // for each pending invitee
             const invites = listInvites(ev.id) || [];
             invites.forEach((inv) => {
               if (inv.status !== "pending") return;
-              const key = `${ev.id}|${r.offsetDays}|${inv.id}`;
-              if (sent[key]) return; // already sent
-              // send (simulate)
+
+              const key = `${ev.id}|${r.offsetDays}|${inv.userId}`;
+              if (sent[key]) return;
+
               sendReminderToInvitee(ev, inv);
               sent[key] = Date.now();
             });

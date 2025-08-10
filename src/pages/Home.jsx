@@ -22,6 +22,10 @@ import isToday from "dayjs/plugin/isToday";
 import { EventContext } from "../context/EventContext";
 import { useNavigate } from "react-router-dom";
 
+// Ant Design imports
+import { Tour } from "antd";
+import "antd/dist/reset.css";
+
 dayjs.extend(isToday);
 
 export default function Home() {
@@ -29,6 +33,7 @@ export default function Home() {
   const { events, removeEvent } = useContext(EventContext);
   const [filterType, setFilterType] = useState("");
   const [search, setSearch] = useState("");
+  const [tourOpen, setTourOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width:600px)");
 
   // Safe filter + sort logic
@@ -45,8 +50,36 @@ export default function Home() {
       });
   }, [filterType, search, events]);
 
+  // Tour steps
+  const tourSteps = [
+    {
+      title: "Event Filters",
+      description: "You can filter events by type here.",
+      target: () => document.querySelector("#filter-select")
+    },
+    {
+      title: "Search Events",
+      description: "Type here to quickly find events by name or location.",
+      target: () => document.querySelector("#search-bar")
+    },
+    {
+      title: "Event List",
+      description: "This section shows your events sorted by date.",
+      target: () => document.querySelector("#event-list")
+    }
+  ];
+
   return (
     <Box sx={{ p: isMobile ? 2 : 4, backgroundColor: "#f5f5dc", minHeight: "100vh" }}>
+      {/* Tour trigger button */}
+      <Button
+        variant="outlined"
+        onClick={() => setTourOpen(true)}
+        sx={{ mb: 2, borderColor: "#8B5E3C", color: "#8B5E3C" }}
+      >
+        Start Tour
+      </Button>
+
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ color: "#5c4033" }}>
         Event Timeline
       </Typography>
@@ -61,6 +94,7 @@ export default function Home() {
         }}
       >
         <TextField
+          id="filter-select"
           select
           label="Filter by Type"
           value={filterType}
@@ -74,6 +108,7 @@ export default function Home() {
         </TextField>
 
         <TextField
+          id="search-bar"
           placeholder="Search events..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -89,7 +124,7 @@ export default function Home() {
       </Box>
 
       {/* Event List */}
-      <Grid container spacing={3}>
+      <Grid container spacing={3} id="event-list">
         {filteredEvents.map((event) => {
           const isPast = dayjs(event.date).isBefore(dayjs(), "minute");
           const isEventToday = dayjs(event.date).isToday();
@@ -160,25 +195,30 @@ export default function Home() {
                     </Typography>
                   </Box>
 
-                  {/* View details */}
-                  <Button
-                    variant="contained"
-                    size="small"
-                    sx={{
-                      mt: 2,
-                      backgroundColor: "#8B5E3C",
-                      "&:hover": { backgroundColor: "#70422a" }
-                    }}
-                    onClick={() => navigate(`/event/${event.id}`)}
-                  >
-                    View Details
-                  </Button>
+                  {/* View details only for RSVP type */}
+                  {event.type === "RSVP" && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      sx={{
+                        mt: 2,
+                        backgroundColor: "#8B5E3C",
+                        "&:hover": { backgroundColor: "#70422a" }
+                      }}
+                      onClick={() => navigate(`/event/${event.id}`)}
+                    >
+                      View Details
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </Grid>
           );
         })}
       </Grid>
+
+      {/* Ant Design Tour */}
+      <Tour open={tourOpen} onClose={() => setTourOpen(false)} steps={tourSteps} />
     </Box>
   );
 }

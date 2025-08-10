@@ -26,29 +26,27 @@ function Navbar() {
   const location = useLocation();
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
-
   const handleLogout = () => {
     logOut();
     navigate("/signin");
   };
-
   const goToProfile = () => navigate("/profile");
 
-  // Compute next event for RSVP safely
+  // Get first available event for RSVP
   const nextEventId = useMemo(() => {
     try {
       const events = listEvents();
+      console.log("Events from mockdb:", events);
       return events?.length > 0 ? events[0].id : null;
     } catch {
       return null;
     }
   }, []);
 
+  // Navigation links
   const navLinks = [
     { label: "Home", path: "/" },
-    { label: "Event Create", path: "/event-create" },
-    { label: "Dashboard", path: "/dashboard" },
-    { label: "RSVP", path: nextEventId ? `/rsvp/${nextEventId}` : "/rsvp" },
+    { label: "Event Create", path: "/event-create" }
   ];
 
   // Drawer menu for mobile
@@ -78,6 +76,15 @@ function Navbar() {
             <ListItemText primary={item.label} />
           </ListItem>
         ))}
+        <ListItem
+          button
+          component={Link}
+          to={nextEventId ? `/rsvp/${nextEventId}` : "/rsvp"}
+          onClick={handleDrawerToggle}
+          sx={{ "&:hover": { backgroundColor: "rgba(139,94,60,0.1)" } }}
+        >
+          <ListItemText primary="RSVP" />
+        </ListItem>
       </List>
       <Divider />
       {currentUser ? (
@@ -108,7 +115,7 @@ function Navbar() {
     </Box>
   );
 
-  // Hide navbar only after hooks run
+  // Hide navbar on auth pages
   if (location.pathname === "/signin" || location.pathname === "/signup") {
     return null;
   }
@@ -129,6 +136,8 @@ function Navbar() {
           >
             Event Manager
           </Typography>
+
+          {/* Desktop Menu */}
           <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 2 }}>
             {navLinks.map((item) => (
               <Button
@@ -141,6 +150,16 @@ function Navbar() {
                 {item.label}
               </Button>
             ))}
+            <Button
+              component={Link}
+              to={nextEventId ? `/rsvp/${nextEventId}` : "/rsvp"}
+              sx={{
+                color: "white", textTransform: "none", borderRadius: "20px", px: 2,
+                "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" },
+              }}
+            >
+              RSVP
+            </Button>
             {currentUser ? (
               <>
                 <IconButton onClick={goToProfile} sx={{ p: 0 }}>
@@ -160,6 +179,8 @@ function Navbar() {
               </>
             )}
           </Box>
+
+          {/* Mobile Menu Button */}
           <Box sx={{ display: { xs: "flex", sm: "none" }, alignItems: "center" }}>
             <IconButton onClick={handleDrawerToggle} sx={{ color: "white" }}>
               <MenuIcon />
@@ -167,6 +188,8 @@ function Navbar() {
           </Box>
         </Toolbar>
       </AppBar>
+
+      {/* Mobile Drawer */}
       <Drawer
         anchor="right" open={mobileOpen} onClose={handleDrawerToggle}
         sx={{ "& .MuiDrawer-paper": { backgroundColor: "#fff" } }}

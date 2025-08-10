@@ -8,7 +8,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import SignIn from "./pages/auth/SignIn";
 import SignUpWizard from "./pages/auth/SignUpWizard";
 import RsvpDashboard from "./components/rsvp/RsvpDashboard"; // NEW
-
+import ProfilePage from "./pages/ProfilePage";
 function PrivateRoute({ children }) {
   const { currentUser } = useAuth();
   return currentUser ? children : <Navigate to="/signin" />;
@@ -22,7 +22,7 @@ function App() {
         <Routes>
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUpWizard />} />
-
+        <Route path="/profile" element={<ProfilePage />} />
           <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
           <Route path="/event-create" element={<PrivateRoute><EventCreation /></PrivateRoute>} />
           <Route path="/event/:id" element={<PrivateRoute><EventDetailsPage /></PrivateRoute>} />
